@@ -1,0 +1,53 @@
+name: Upstream pull
+description: "Pull upstream changes"
+author: SX / S-S-X
+branding:
+  icon: git-pull-request
+  color: green
+
+inputs:
+  repository:
+    description: "Upstream repository URI"
+    required: true
+  source-branch:
+    description: "Upstream source branch to pull changes from"
+    required: true
+    default: master
+  upstream-branch:
+    description: "Local branch to pull upstream source branch into"
+    required: true
+    default: upstream
+  target-branch:
+    description: "Target branch for pull requests"
+    required: true
+    default: master
+
+outputs:
+  upstream-log:
+    description: "Git log for upstream changes"
+    value: ${{ steps.upstream-log.outputs.stdout }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure git
+      shell: bash
+      run: |
+        git config --global user.name 'Upstream Merge Action'
+        git config --global user.email '50966843+S-S-X@users.noreply.github.com'
+        git remote add -f upstream "${{ inputs.repository }}"
+    - name: Fetch upstream
+      shell: bash
+      run: |
+        git fetch upstream
+        git checkout -B "${{ inputs.upstream-branch }}"
+        git reset --hard "upstream/${{ inputs.source-branch }}"
+        git push origin "${{ inputs.upstream-branch }}" --force
+    - id: upstream-log
+      name: Get changelog
+      shell: bash
+      run: |
+        LOG="$(git log origin/master..upstream/master | sed 's/"/\&#34;/g')"
+        LOG="$(sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g'<<<"$LOG")"
+        LOG="${LOG//'%'/'%25'}";LOG="${LOG//$'\n'/'%0A'}"
+        echo "::set-output name=stdout::${LOG//$'\r'/'%0D'}"
