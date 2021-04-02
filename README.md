@@ -16,6 +16,8 @@ jobs:
     - uses: actions/checkout@v2
     - id: upstream-pull
       uses: S-S-X/upstream-pull@master
+      with:
+        repository: < UPSTREAM REPOSITORY URI >
     - uses: repo-sync/pull-request@v2
       with:
         source_branch: upstream
